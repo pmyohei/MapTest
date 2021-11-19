@@ -6,7 +6,6 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.util.Log;
-import android.view.MotionEvent;
 import android.view.View;
 
 public class CanvasTestView extends View {
@@ -14,19 +13,26 @@ public class CanvasTestView extends View {
     private float xZahyou = 0;
     private float yZahyou = 0;
 
-    private float mParentPosX = 0;
-    private float mParentPosY = 0;
+    private float mStartPosX = 0;
+    private float mStartPosY = 0;
+    private float mEndPosX = 0;
+    private float mEndPosY = 0;
 
     public CanvasTestView(Context context) {
         super(context);
     }
 
 
-    public CanvasTestView(Context context, float parentPosX, float parentPosY) {
+    public CanvasTestView(Context context, float startPosX, float startPosY, float endPosX, float endPosY) {
         super(context);
 
-        mParentPosX = parentPosX;
-        mParentPosY = parentPosY;
+        mStartPosX = startPosX;
+        mStartPosY = startPosY;
+        mEndPosX   = endPosX;
+        mEndPosY   = endPosY;
+
+        //ノードに対して背面になるようにする（デフォルト値は0のため、0未満の値を指定）
+        setTranslationZ(-1);
     }
 
 /*    @Override
@@ -41,6 +47,20 @@ public class CanvasTestView extends View {
 
         return true;
     }*/
+
+
+    /*
+     * 終端位置の移動
+     */
+    public void moveEndPos(float endPosX, float endPosY) {
+
+        //終端位置を更新
+        mEndPosX = endPosX;
+        mEndPosY = endPosY;
+
+        //再描画
+        invalidate();
+    }
 
     @Override
     protected void onDraw(Canvas canvas) {
@@ -64,13 +84,13 @@ public class CanvasTestView extends View {
         Path path = new Path();
         // スタート地点を移動
         //path.moveTo(250, 250);
-        path.moveTo(mParentPosX, mParentPosY);
+        path.moveTo(mStartPosX, mStartPosY);
         // 制御点1 X, 制御点1 Y, 制御点2 X, 制御点2Y, 終点X, 終点Y
         //path.cubicTo(450, 0, 500, 50, 500, 250);
-        path.quadTo(mParentPosX, mParentPosY + 300f, mParentPosX + 200f, mParentPosY + 200f);
+        path.quadTo(mStartPosX, (mStartPosY + mEndPosY) / 2, mEndPosX, mEndPosY);
         //path.quadTo(100f, 800f, xZahyou, yZahyou);
 
-        Log.i("onDraw", "mParentPosX=" + mParentPosX + " mParentPosY=" + mParentPosY);
+        Log.i("onDraw", "mParentPosX=" + mStartPosX + " mParentPosY=" + mStartPosY);
 
         canvas.drawPath(path, paint);
     }
