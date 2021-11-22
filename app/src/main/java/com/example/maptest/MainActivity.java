@@ -24,6 +24,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.view.animation.Animation;
+import android.view.animation.DecelerateInterpolator;
 import android.view.animation.TranslateAnimation;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
@@ -33,6 +34,7 @@ import android.widget.TextView;
 public class MainActivity extends AppCompatActivity {
 
     private ScaleGestureDetector mScaleGestureDetector;
+    private GestureDetector      mGes;
 
     private float mPreX = 0;
     private float mPreY = 0;
@@ -45,18 +47,21 @@ public class MainActivity extends AppCompatActivity {
 
         FrameLayout root = findViewById(R.id.root);
 
-        GestureDetector dec   = new GestureDetector(this, new MoveListener(this));
+        mGes                  = new GestureDetector(this, new MoveListener(this));
         mScaleGestureDetector = new ScaleGestureDetector(this, new ScaleListener());
 
         //Fragmentが受けたタッチイベントを全て２つのGestureDetectorに流してあげます。
-/*        root.setOnTouchListener(new View.OnTouchListener() {
+/*
+        root.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
                 mScaleGestureDetector.onTouchEvent(event);
-                dec.onTouchEvent(event);
-                return true;
+                mGes.onTouchEvent(event);
+
+                return false;
             }
-        });*/
+        });
+*/
 
 
 
@@ -419,8 +424,10 @@ public class MainActivity extends AppCompatActivity {
                         //root.setTranslationY( nowy - distancey );
 
 
-                        //実験
-                        Scroller scroller = new Scroller(v.getContext());
+                        //スクローラー
+                        final int MOVE_DURATION = 1000;
+
+                        Scroller scroller = new Scroller(v.getContext(), new DecelerateInterpolator());
 
                         // アニメーションを開始
                         scroller.startScroll(
@@ -428,12 +435,11 @@ public class MainActivity extends AppCompatActivity {
                                 (int)nowy,      // scroll の開始位置 (Y)
                                 -distancex,      // 移動する距離、正の値だとコンテンツが左にスクロールする (X)
                                 -distancey,      // 移動する距離、正の値だとコンテンツが左にスクロールする (Y)
-                                500     // スクロールにかかる時間 [milliseconds]
+                                MOVE_DURATION     // スクロールにかかる時間 [milliseconds]
                         );
 
-                        //root.invalidate();
 
-                        ValueAnimator scrollAnimator = ValueAnimator.ofFloat(0, 1);
+                        ValueAnimator scrollAnimator = ValueAnimator.ofFloat(0, 1).setDuration(MOVE_DURATION);
                         scrollAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
                             @Override
                             public void onAnimationUpdate(ValueAnimator valueAnimator) {
@@ -454,6 +460,7 @@ public class MainActivity extends AppCompatActivity {
                             }
                         });
                         scrollAnimator.start();
+
 
 /*                        Handler handler = new Handler();
                         handler.post(new Runnable() {
@@ -620,10 +627,14 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
 
+            Log.i("onFling", "velocityX=" + velocityX + " velocityY=" + velocityY);
+
             int SCALE = 1;
 
 //            mScroller.fling(currentX, currentY, velocityX / SCALE, velocityY / SCALE, minX, minY, maxX, maxY);
 //            postInvalidate();
+
+
             return true;
         }
 
@@ -730,6 +741,9 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onTouchEvent(MotionEvent motionEvent) {
+
+        mScaleGestureDetector.onTouchEvent(motionEvent);
+        mGes.onTouchEvent(motionEvent);
 
         boolean isDown;
 
