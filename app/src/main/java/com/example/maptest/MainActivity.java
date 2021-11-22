@@ -35,9 +35,12 @@ public class MainActivity extends AppCompatActivity {
 
     private ScaleGestureDetector mScaleGestureDetector;
     private GestureDetector      mGes;
+    private float                mScreenScaleX;
+    private float                mScreenScaleY;
 
     private float mPreX = 0;
     private float mPreY = 0;
+
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
@@ -46,6 +49,14 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         FrameLayout root = findViewById(R.id.root);
+
+        float scaleX = root.getScaleX();
+        float scaleY = root.getScaleY();
+
+        Log.i("Scale", "初回 getScaleX=" + scaleX + " getScaleY=" + scaleY);
+
+        mScreenScaleX = scaleX;
+        mScreenScaleY = scaleY;
 
         mGes                  = new GestureDetector(this, new MoveListener(this));
         mScaleGestureDetector = new ScaleGestureDetector(this, new ScaleListener());
@@ -412,20 +423,45 @@ public class MainActivity extends AppCompatActivity {
 
                         Log.i("move", "移動先（北海道）の親レイアウトマージン toleft=" + toleft + " totop=" + totop);
 
+                        //実験
+/*                        toleft *= root.getScaleX();
+                        totop  *= root.getScaleY();
+                        Log.i("move", "移動先（北海道）の親レイアウトマージン（スケール考慮） toleft=" + toleft + " totop=" + totop);*/
+                        //------
+
                         //移動量
-                        //int distancex = (int) Math.abs( toleft - nowMarginx );
-                        //int distancey = (int) Math.abs( totop  - nowMarginy );
                         int distancex = toleft - (int)nowMarginx;
                         int distancey = totop  - (int)nowMarginy;
+                        //int distancex = toleft - (int)(nowMarginx * root.getScaleX());
+                        //int distancey = totop  - (int)(nowMarginy * root.getScaleY());
 
                         Log.i("move", "移動量 distancex=" + distancex + " distancey=" + distancey);
+                        Log.i("move", "移動後 TranslationX=" + ( nowx - distancex ) + " TranslationY=" + ( nowy - distancey ));
 
+                        //位置を反映
                         //root.setTranslationX( nowx - distancex );
                         //root.setTranslationY( nowy - distancey );
 
 
+
+/*
+                        distancex *= root.getScaleX();
+                        distancey *= root.getScaleY();
+
+                        Log.i("move", "移動量(スケール考慮) distancex=" + distancex + " distancey=" + distancey);
+*/
+
+
+                        //実験
+                        //float preScale = root.getScaleX();
+
+                        //root.setScaleX(1.0f);
+                        //root.setScaleY(1.0f);
+                        //--
+
+
                         //スクローラー
-                        final int MOVE_DURATION = 1000;
+                        final int MOVE_DURATION = 500;
 
                         Scroller scroller = new Scroller(v.getContext(), new DecelerateInterpolator());
 
@@ -456,6 +492,11 @@ public class MainActivity extends AppCompatActivity {
                                 } else {
                                     scrollAnimator.cancel();
                                     //onScrollFinished();
+
+                                    //jikken
+                                    //root.setScaleX(preScale);
+                                    //root.setScaleY(preScale);
+                                    //
                                 }
                             }
                         });
@@ -621,21 +662,65 @@ public class MainActivity extends AppCompatActivity {
         private Scroller mScroller;
 
         public MoveListener( Context context ){
-            mScroller = new Scroller(context);
+            mScroller = new Scroller(context, new DecelerateInterpolator());
         }
 
         @Override
         public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
 
+            //現在のスクロールを停止
+            mScroller.forceFinished(true);
+
             Log.i("onFling", "velocityX=" + velocityX + " velocityY=" + velocityY);
 
-            int SCALE = 1;
+            int SCALE = 2;
 
 //            mScroller.fling(currentX, currentY, velocityX / SCALE, velocityY / SCALE, minX, minY, maxX, maxY);
 //            postInvalidate();
 
+            FrameLayout root = findViewById(R.id.root);
 
-            return true;
+            float nowx = root.getTranslationX();
+            float nowy = root.getTranslationY();
+
+            //Log.i("onFling", "nowx=" + nowx + " nowy=" + nowy);
+
+            //スクローラー
+            final int MOVE_DURATION = 1000;
+
+            // アニメーションを開始
+            mScroller.fling(
+                    (int)nowx,                          // scroll の開始位置 (X)
+                    (int)nowy,                          // scroll の開始位置 (Y)
+                    (int)velocityX / SCALE,     //初速
+                    (int)velocityY / SCALE,     //初速
+                    -2000,
+                    2000,
+                    -2000,
+                    2000
+            );
+
+            ValueAnimator scrollAnimator = ValueAnimator.ofFloat(0, 1).setDuration(5000);
+            scrollAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                @Override
+                public void onAnimationUpdate(ValueAnimator valueAnimator) {
+
+                    if (!mScroller.isFinished()) {
+                        mScroller.computeScrollOffset();
+                        //setPieRotation(scroller.getCurrY());
+
+                        root.setTranslationX( mScroller.getCurrX() );
+                        root.setTranslationY( mScroller.getCurrY() );
+
+                    } else {
+                        scrollAnimator.cancel();
+                        //onScrollFinished();
+                    }
+                }
+            });
+            scrollAnimator.start();
+
+            return false;
         }
 
 
@@ -719,8 +804,43 @@ public class MainActivity extends AppCompatActivity {
 
     //ピンチ（拡大・縮小）操作が行われた際の処理です。
     private class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
+
+        float mRootScaleX;
+        float mRootScaleY;
+
+
+        @Override
+        public boolean onScaleBegin(ScaleGestureDetector detector) {
+
+            Log.i("onScale", "onScaleBegin");
+
+            FrameLayout root = findViewById(R.id.root);
+
+            mRootScaleX = root.getScaleX();
+            mRootScaleY = root.getScaleY();
+
+            return super.onScaleBegin(detector);
+            //return true;
+        }
+
         @Override
         public boolean onScale(ScaleGestureDetector detector) {
+
+            FrameLayout root = findViewById(R.id.root);
+
+            float scaleFactor = detector.getScaleFactor();
+
+            float scaleX = root.getScaleX();
+            float scaleY = root.getScaleY();
+
+            Log.i("onScale", "getScaleFactor=" + scaleFactor);
+            Log.i("onScale", "設定前 getScaleX=" + scaleX + " getScaleY=" + scaleY);
+
+            root.setScaleX( mRootScaleX * scaleFactor );
+            root.setScaleY( mRootScaleY * scaleFactor );
+
+            Log.i("onScale", "設定後 getScaleX=" + scaleX + " getScaleY=" + scaleY);
+
             // 素のgetScaleFactor()の値を掛けてしまうと動きが大きすぎるため、
             // 緩やかにするため補正している。
             //mActiveScale *= (mScaleGestureDetector.getScaleFactor() -1f)/20f +1f;
@@ -735,23 +855,46 @@ public class MainActivity extends AppCompatActivity {
             new UpdateMatrix().update();
 */
             return super.onScale(detector);
+            //return true;
         }
+
+
+        @Override
+        public void onScaleEnd(ScaleGestureDetector detector) {
+            super.onScaleEnd(detector);
+        }
+
+
+
+
     }
 
 
     @Override
     public boolean onTouchEvent(MotionEvent motionEvent) {
 
-        mScaleGestureDetector.onTouchEvent(motionEvent);
-        mGes.onTouchEvent(motionEvent);
 
-        boolean isDown;
+        Log.i("onTouchEvent", "findPointerIndex (0)=" + motionEvent.findPointerIndex (0) + " findPointerIndex (1)=" + motionEvent.findPointerIndex (1));
+        Log.i("onTouchEvent", "getPointerCount=" + motionEvent.getPointerCount());
+        //Log.i("onScale", "getPointerId(0)=" + motionEvent.getActionIndex(motionEvent));
+
+        mScaleGestureDetector.onTouchEvent(motionEvent);
+
+        //ピンチ操作なら、終了
+        //※ここで終了させないと、以降の移動処理も実施されてしまう
+        if( motionEvent.getPointerCount() > 1 ){
+            return true;
+        }
+
+        mGes.onTouchEvent(motionEvent);
 
         FrameLayout root = findViewById(R.id.root);
 
+        Log.i("onTouchEvent", "タッチした瞬間 TranslationX=" + root.getTranslationX() + " TranslationY=" + root.getTranslationY());
+
+
         switch (motionEvent.getAction()) {
             case MotionEvent.ACTION_DOWN:
-                isDown = true;
 
                 mPreX = motionEvent.getX();
                 mPreY = motionEvent.getY();
@@ -759,8 +902,6 @@ public class MainActivity extends AppCompatActivity {
                 break;
 
             case MotionEvent.ACTION_UP:
-
-                isDown = false;
                 break;
 
             case MotionEvent.ACTION_MOVE:
