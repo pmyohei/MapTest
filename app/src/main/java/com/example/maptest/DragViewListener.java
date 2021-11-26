@@ -12,9 +12,15 @@ public class DragViewListener  implements View.OnTouchListener {
     private int oldx;
     private int oldy;
 
+    private float testScaleX;
+    private float testScaleY;
+
     public DragViewListener(View dragNode, CanvasTestView parentLine) {
         mDragNode   = dragNode;
         mParentLine = parentLine;
+
+        testScaleX = 1.0f;
+        testScaleY = 1.0f;
     }
 
     @Override
@@ -30,9 +36,10 @@ public class DragViewListener  implements View.OnTouchListener {
                 //Log.i("childNode", "x - oldx=" + (x - oldx));
                 //Log.i("childNode", "getHistoricalX=" + event.getHistoricalX(0)); 落ちる
 
-                // 今回イベントでのView移動先の位置
-                int left = mDragNode.getLeft() + (x - oldx);
-                int top  = mDragNode.getTop()  + (y - oldy);
+                //今回イベントでのView移動先の位置
+                //※移動量から倍率を取り除く
+                int left = mDragNode.getLeft() + (int)((x - oldx) / testScaleX);
+                int top  = mDragNode.getTop()  + (int)((y - oldy) / testScaleY);
 
                 //ノードの移動
                 mDragNode.layout(left, top, left + mDragNode.getWidth(), top + mDragNode.getHeight());
@@ -59,6 +66,11 @@ public class DragViewListener  implements View.OnTouchListener {
         return false;
     }
 
+    public void setTestScaleX(float value) {
+        testScaleX = value;
+    }
 
-
+    public void setTestScaleY(float value) {
+        testScaleY = value;
+    }
 }

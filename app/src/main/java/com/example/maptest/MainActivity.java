@@ -9,6 +9,7 @@ import androidx.core.graphics.drawable.DrawableCompat;
 import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
@@ -41,6 +42,8 @@ public class MainActivity extends AppCompatActivity {
     private float preMoveScaleX;
     private float preMoveScaleY;
 
+    public static float testExScaleX;
+    public static float testExScaleY;
 
     private float mPreX = 0;
     private float mPreY = 0;
@@ -54,6 +57,7 @@ public class MainActivity extends AppCompatActivity {
     private float mPinchEndDiffY = 1;
     private boolean mPinchStart = true;
 
+    DragViewListener mDragViewListener;
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
@@ -324,7 +328,8 @@ public class MainActivity extends AppCompatActivity {
                 vg_root.addView(pathView);
 
                 //タッチリスナー
-                childNode.setOnTouchListener( new DragViewListener( childNode, pathView ));
+                mDragViewListener = new DragViewListener( childNode, pathView );
+                childNode.setOnTouchListener( mDragViewListener );
 
 /*
                 childNode.setOnFocusChangeListener(new View.OnFocusChangeListener() {
@@ -432,67 +437,38 @@ public class MainActivity extends AppCompatActivity {
 
                         FrameLayout root = findViewById(R.id.root);
 
-                        //現在のrootのTranslation座標
-                        //float rootPosX = root.getTranslationX();
-                        //float rootPosY = root.getTranslationY();
-                        float rootPosX = root.getTranslationX() + mPinchPosDiffX;
-                        float rootPosY = root.getTranslationY() + mPinchPosDiffY;
+                        //スクロール開始位置
+                        float scrollStartX = root.getTranslationX() + mPinchPosDiffX;
+                        float scrollStartY = root.getTranslationY() + mPinchPosDiffY;
 
-                        float rootPinchPosX = root.getTranslationX() + mPinchPosDiffX;
-                        float rootPinchPosY = root.getTranslationY() + mPinchPosDiffY;
-
-                        //float rootPinchPosX = rootPosX + mPinchDiffX;
-                        //float rootPinchPosY = rootPosY + mPinchDiffY;
+                        //現在のrootのTranslation座標（ピンチの調整を無効化）
+                        float rootPosX = scrollStartX / testScaleX;
+                        float rootPosY = scrollStartY / testScaleY;
 
                         Log.i("move", "現在のrootのTranslation座標 x=" + rootPosX + " y=" + rootPosY);
 
-                        //jikken
-                        //rootPosX /= preMoveScaleX;
-                        //rootPosY /= preMoveScaleY;
-                        rootPosX /= testScaleX;
-                        rootPosY /= testScaleY;
-                        //rootPosX /= root.getScaleX();
-                        //rootPosY /= root.getScaleY();
-
-                        //ピンチ操作の差分反映は1度のみ。移動後は、
+                        //ピンチ操作の差分反映は1度のみ。移動後はクリア
                         mPinchPosDiffX = 0;
                         mPinchPosDiffY = 0;
 
                         //Log.i("move", "現在のrootのTranslation座標(スケール比率) x=" + rootPosX + " y=" + rootPosY);
                         //-----
 
-                        //現在のTranslation座標に対応する親レイアウトマージン=中心座標の親レイアウトマージン値
-                        float rootMarginx = 4000 - rootPosX;
-                        float rootMarginy = 4000 - rootPosY;
-
-                        float rootMarginAdjustx = 4000 - (rootPosX / testScaleX);
-                        float rootMarginAdjusty = 4000 - (rootPosY / testScaleY);
-
-
-                        Log.i("move", "現在のTranslation座標に対応する親レイアウトマージン(スケール比率) x=" + rootMarginx + " y=" + rootMarginy);
+                        //現在のTranslation座標に対応する親レイアウトマージン=中心座標の親レイアウトマージン値（ピンチ考慮なし）
+                        float rootMarginX = 4000 - rootPosX;
+                        float rootMarginY = 4000 - rootPosY;
 
                         //移動先の親レイアウトマージン
-                        int toleft = hNode.getLeft();
-                        int totop  = hNode.getTop();
+                        int toLeft = hNode.getLeft();
+                        int toTop  = hNode.getTop();
 
-                        Log.i("move", "移動先（北海道）の親レイアウトマージン toleft=" + toleft + " totop=" + totop);
+                        //移動量（ピンチ考慮なし）
+                        int MarginDiffX = toLeft - (int)rootMarginX;
+                        int MarginDiffY = toTop  - (int)rootMarginY;
 
-                        if( ((int)rootMarginAdjustx == toleft) && ((int)rootMarginAdjusty == totop) ){
-                            Log.i("move", "return");
-                            //return;
-                        }
-
-                        //実験
-/*                        toleft *= root.getScaleX();
-                        totop  *= root.getScaleY();
-                        Log.i("move", "移動先（北海道）の親レイアウトマージン（スケール考慮） toleft=" + toleft + " totop=" + totop);*/
-                        //------
-
-                        //移動量
-                        int MarginDiffX = toleft - (int)rootMarginx;
-                        int MarginDiffY = totop  - (int)rootMarginy;
-                        //int MarginDiffX = toleft - (int)(rootMarginx * root.getScaleX());
-                        //int MarginDiffY = totop  - (int)(rootMarginy * root.getScaleY());
+                        //移動量：スケール比率を考慮
+                        float MarginPinchDiffX = (int)(testScaleX * MarginDiffX);
+                        float MarginPinchDiffY = (int)(testScaleY * MarginDiffY);
 
                         Log.i("move", "移動量 MarginDiffX=" + MarginDiffX + " MarginDiffY=" + MarginDiffY);
                         Log.i("move", "移動後 TranslationX=" + ( rootPosX - MarginDiffX ) + " TranslationY=" + ( rootPosY - MarginDiffY ));
@@ -503,46 +479,13 @@ public class MainActivity extends AppCompatActivity {
 
                         Log.i("move", "移動量(スケール考慮 int) MarginDiffX=" + MarginDiffX * (int)root.getScaleX() + " MarginDiffY=" + MarginDiffY * (int)root.getScaleY());
 
-                        //移動量
-                        float MarginDiffFroatX = toleft - rootMarginx;
-                        float MarginDiffFroatY = totop  - rootMarginy;
-
-                        float MarginDiffFroatScaleX = MarginDiffFroatX * root.getScaleX();
-                        float MarginDiffFroatScaleY = MarginDiffFroatY * root.getScaleY();
-
-                        Log.i("move", "移動量(スケール考慮 float) MarginDiffFroatScaleX=" + MarginDiffFroatScaleX + " MarginDiffFroatScaleY=" + MarginDiffFroatScaleY);
-
-                        //MarginDiffX = (int)MarginDiffFroatScaleX;
-                        //MarginDiffY = (int)MarginDiffFroatScaleY;
-                        //Log.i("move", "移動量(スケール考慮 float→int) MarginDiffX=" + MarginDiffX + " MarginDiffY=" + MarginDiffY);
-
-                        //移動量：スケール比率を考慮
-
-                        float MarginTestScaleDiffX = (int)(testScaleX * (toleft - rootMarginx));
-                        float MarginTestScaleDiffY = (int)(testScaleY * (totop  - rootMarginy));
-
                         float marginX = 4000 - root.getTranslationX();
                         float marginY = 4000 - root.getTranslationY();
 
-                        //float MarginTestScaleDiffX = (int)( (testScaleX * (toleft - marginX)) + mPinchPosDiffX ) ;
-                        //float MarginTestScaleDiffY = (int)( (testScaleY * (totop  - marginY)) + mPinchPosDiffY ) ;
-                        //float MarginTestScaleDiffX = (int)( (testScaleX * (toleft - marginX - mPinchPosDiffX))  ) ;
-                        //float MarginTestScaleDiffY = (int)( (testScaleY * (totop  - marginY - mPinchPosDiffY))  ) ;
-
-
-                        Log.i("move", "移動量(スケール考慮 比率取得 float) MarginTestScaleDiffX=" + MarginTestScaleDiffX + " MarginTestScaleDiffY=" + MarginTestScaleDiffY);
+                        Log.i("move", "移動量(スケール考慮 比率取得 float) MarginPinchDiffX=" + MarginPinchDiffX + " MarginPinchDiffY=" + MarginPinchDiffY);
 
                         preMoveScaleX = testScaleX;
                         preMoveScaleY = testScaleY;
-                        //preMoveScaleX = root.getScaleX();
-                        //preMoveScaleY = root.getScaleY();
-
-                        //実験
-                        //float preScale = root.getScaleX();
-
-                        //root.setScaleX(1.0f);
-                        //root.setScaleY(1.0f);
-                        //--
 
 
                         //スクローラー
@@ -554,8 +497,8 @@ public class MainActivity extends AppCompatActivity {
                         scroller.startScroll(
                                 //(int)rootPosX,      // scroll の開始位置 (X)
                                 //(int)rootPosY,      // scroll の開始位置 (Y)
-                                (int)rootPinchPosX,
-                                (int)rootPinchPosY,
+                                (int)scrollStartX,
+                                (int)scrollStartY,
                                 //(int)root.getTranslationX(),
                                 //(int)root.getTranslationY(),
 
@@ -563,8 +506,8 @@ public class MainActivity extends AppCompatActivity {
                                 //-MarginDiffY,      // 移動する距離、正の値だとコンテンツが左にスクロールする (Y)
                                 //(int)-MarginDiffFroatX,
                                 //(int)-MarginDiffFroatY,
-                                (int)-MarginTestScaleDiffX,
-                                (int)-MarginTestScaleDiffY,
+                                (int)-MarginPinchDiffX,
+                                (int)-MarginPinchDiffY,
 
                                 MOVE_DURATION       // スクロールにかかる時間 [milliseconds]
                         );
@@ -638,7 +581,11 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onClick(View v) {
 
-                        FrameLayout root = findViewById(R.id.root);
+                        Intent intent = new Intent(MainActivity.this, GarallyActivity.class);
+                        startActivity(intent);
+
+
+/*                        FrameLayout root = findViewById(R.id.root);
 
                         //現在のrootのTranslation座標
                         float nowx = root.getTranslationX();
@@ -667,7 +614,7 @@ public class MainActivity extends AppCompatActivity {
                         Log.i("move", "移動量 distancex=" + distancex + " distancey=" + distancey);
 
                         root.setTranslationX( nowx - distancex );
-                        root.setTranslationY( nowy - distancey );
+                        root.setTranslationY( nowy - distancey );*/
                     }
                 });
 
@@ -1005,6 +952,9 @@ public class MainActivity extends AppCompatActivity {
             testScaleY *= (diffY / preDiffY);
 
             Log.i("onScaleEnd", "testScaleX=" + testScaleX + " testScaleY=" + testScaleY);
+
+            mDragViewListener.setTestScaleX( testScaleX );
+            mDragViewListener.setTestScaleY( testScaleY );
 
             //ピンチ開始時との位置のズレを保持
             //※連続で操作される可能性があるため、累計させる
