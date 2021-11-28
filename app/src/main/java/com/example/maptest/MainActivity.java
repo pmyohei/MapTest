@@ -477,6 +477,7 @@ public class MainActivity extends AppCompatActivity {
                         Log.i("move", "移動量(スケール考慮) MarginDiffX=" + MarginDiffX + " MarginDiffY=" + MarginDiffY);
                         Log.i("move", "移動後 TranslationX=" + ( rootPosX - MarginDiffX ) + " TranslationY=" + ( rootPosY - MarginDiffY ));
 
+
                         //位置を反映
                         //root.setTranslationX( rootPosX - MarginDiffX );
                         //root.setTranslationY( rootPosY - MarginDiffY );
