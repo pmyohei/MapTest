@@ -441,18 +441,17 @@ public class MainActivity extends AppCompatActivity {
                         float scrollStartX = root.getTranslationX() + mPinchPosDiffX;
                         float scrollStartY = root.getTranslationY() + mPinchPosDiffY;
 
+                        Log.i("move", "スクロール開始位置 x=" + scrollStartX + " y=" + scrollStartY);
+
                         //現在のrootのTranslation座標（ピンチの調整を無効化）
                         float rootPosX = scrollStartX / testScaleX;
                         float rootPosY = scrollStartY / testScaleY;
 
-                        Log.i("move", "現在のrootのTranslation座標 x=" + rootPosX + " y=" + rootPosY);
+                        Log.i("move", "現在のrootのTranslation座標 testScaleX=" + testScaleX + " x=" + rootPosX + " y=" + rootPosY);
 
                         //ピンチ操作の差分反映は1度のみ。移動後はクリア
                         mPinchPosDiffX = 0;
                         mPinchPosDiffY = 0;
-
-                        //Log.i("move", "現在のrootのTranslation座標(スケール比率) x=" + rootPosX + " y=" + rootPosY);
-                        //-----
 
                         //現在のTranslation座標に対応する親レイアウトマージン=中心座標の親レイアウトマージン値（ピンチ考慮なし）
                         float rootMarginX = 4000 - rootPosX;
@@ -462,15 +461,20 @@ public class MainActivity extends AppCompatActivity {
                         int toLeft = hNode.getLeft();
                         int toTop  = hNode.getTop();
 
+                        Log.i("move", "Left(移動先)=" + toLeft + " Left(センター)=" + tv_center.getLeft());
+                        Log.i("move", "rootMarginX=" + rootMarginX + " rootMarginY=" + rootMarginY);
+
                         //移動量（ピンチ考慮なし）
                         int MarginDiffX = toLeft - (int)rootMarginX;
                         int MarginDiffY = toTop  - (int)rootMarginY;
+
+                        Log.i("move", "移動量 MarginDiffX=" + MarginDiffX + " MarginDiffY=" + MarginDiffY);
 
                         //移動量：スケール比率を考慮
                         float MarginPinchDiffX = (int)(testScaleX * MarginDiffX);
                         float MarginPinchDiffY = (int)(testScaleY * MarginDiffY);
 
-                        Log.i("move", "移動量 MarginDiffX=" + MarginDiffX + " MarginDiffY=" + MarginDiffY);
+                        Log.i("move", "移動量(スケール考慮) MarginDiffX=" + MarginDiffX + " MarginDiffY=" + MarginDiffY);
                         Log.i("move", "移動後 TranslationX=" + ( rootPosX - MarginDiffX ) + " TranslationY=" + ( rootPosY - MarginDiffY ));
 
                         //位置を反映
