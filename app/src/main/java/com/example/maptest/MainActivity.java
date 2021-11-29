@@ -415,7 +415,6 @@ public class MainActivity extends AppCompatActivity {
                 mlp.setMargins(htox, htoy, mlp.rightMargin, mlp.bottomMargin);
 
 
-
                 //ビューの生成----------------------------------------
                 TextView moveNode = new TextView(tv_center.getContext());
                 moveNode.setText( "北海道に移動" );
@@ -448,14 +447,15 @@ public class MainActivity extends AppCompatActivity {
                         float rootPosY = scrollStartY / testScaleY;
 
                         Log.i("move", "現在のrootのTranslation座標 testScaleX=" + testScaleX + " x=" + rootPosX + " y=" + rootPosY);
+                        Log.i("move", "現在のcenterのマージン座標 left=" + tv_center.getLeft() + " top=" + tv_center.getTop());
 
                         //ピンチ操作の差分反映は1度のみ。移動後はクリア
                         mPinchPosDiffX = 0;
                         mPinchPosDiffY = 0;
 
                         //現在のTranslation座標に対応する親レイアウトマージン=中心座標の親レイアウトマージン値（ピンチ考慮なし）
-                        float rootMarginX = 4000 - rootPosX;
-                        float rootMarginY = 4000 - rootPosY;
+                        float rootMarginX = tv_center.getLeft() - rootPosX;
+                        float rootMarginY = tv_center.getTop() - rootPosY;
 
                         //移動先の親レイアウトマージン
                         int toLeft = hNode.getLeft();
@@ -465,33 +465,23 @@ public class MainActivity extends AppCompatActivity {
                         Log.i("move", "rootMarginX=" + rootMarginX + " rootMarginY=" + rootMarginY);
 
                         //移動量（ピンチ考慮なし）
-                        int MarginDiffX = toLeft - (int)rootMarginX;
-                        int MarginDiffY = toTop  - (int)rootMarginY;
-
-                        Log.i("move", "移動量 MarginDiffX=" + MarginDiffX + " MarginDiffY=" + MarginDiffY);
+                        //int MarginDiffX = toLeft - (int)rootMarginX;
+                        //int MarginDiffY = toTop  - (int)rootMarginY;
+//
+                        //Log.i("move", "移動量 MarginDiffX=" + MarginDiffX + " MarginDiffY=" + MarginDiffY);
 
                         //移動量：スケール比率を考慮
-                        float MarginPinchDiffX = (int)(testScaleX * MarginDiffX);
-                        float MarginPinchDiffY = (int)(testScaleY * MarginDiffY);
-
-                        Log.i("move", "移動量(スケール考慮) MarginDiffX=" + MarginDiffX + " MarginDiffY=" + MarginDiffY);
-                        Log.i("move", "移動後 TranslationX=" + ( rootPosX - MarginDiffX ) + " TranslationY=" + ( rootPosY - MarginDiffY ));
-
+                        float MarginPinchDiffX = (int)(testScaleX * (toLeft - rootMarginX));
+                        float MarginPinchDiffY = (int)(testScaleY * (toTop  - rootMarginY));
 
                         //位置を反映
                         //root.setTranslationX( rootPosX - MarginDiffX );
                         //root.setTranslationY( rootPosY - MarginDiffY );
 
-                        Log.i("move", "移動量(スケール考慮 int) MarginDiffX=" + MarginDiffX * (int)root.getScaleX() + " MarginDiffY=" + MarginDiffY * (int)root.getScaleY());
-
-                        float marginX = 4000 - root.getTranslationX();
-                        float marginY = 4000 - root.getTranslationY();
-
                         Log.i("move", "移動量(スケール考慮 比率取得 float) MarginPinchDiffX=" + MarginPinchDiffX + " MarginPinchDiffY=" + MarginPinchDiffY);
 
                         preMoveScaleX = testScaleX;
                         preMoveScaleY = testScaleY;
-
 
                         //スクローラー
                         final int MOVE_DURATION = 500;
@@ -500,20 +490,10 @@ public class MainActivity extends AppCompatActivity {
 
                         // アニメーションを開始
                         scroller.startScroll(
-                                //(int)rootPosX,      // scroll の開始位置 (X)
-                                //(int)rootPosY,      // scroll の開始位置 (Y)
                                 (int)scrollStartX,
                                 (int)scrollStartY,
-                                //(int)root.getTranslationX(),
-                                //(int)root.getTranslationY(),
-
-                                //-MarginDiffX,      // 移動する距離、正の値だとコンテンツが左にスクロールする (X)
-                                //-MarginDiffY,      // 移動する距離、正の値だとコンテンツが左にスクロールする (Y)
-                                //(int)-MarginDiffFroatX,
-                                //(int)-MarginDiffFroatY,
                                 (int)-MarginPinchDiffX,
                                 (int)-MarginPinchDiffY,
-
                                 MOVE_DURATION       // スクロールにかかる時間 [milliseconds]
                         );
 
